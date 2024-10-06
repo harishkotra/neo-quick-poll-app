@@ -3,6 +3,7 @@
 Neo Quick Poll is a decentralized polling application built on the NeoX T4 Testnet. It allows communities to make decisions transparently and securely using blockchain technology.
 
 Smart Contract Repo: [https://github.com/harishkotra/neo-quick-poll-smart-contract](https://github.com/harishkotra/neo-quick-poll-smart-contract)
+
 Infura Sub Graph Repo: [https://github.com/harishkotra/neo-quick-poll-subgraph](https://github.com/harishkotra/neo-quick-poll-subgraph)
 
 ## About the Project
