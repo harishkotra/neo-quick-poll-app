@@ -60,6 +60,14 @@ Note: You'll need MetaMask installed and connected to the NeoX T4 Testnet to use
 
 Remember, this is a testnet application. It's meant for experimentation and learning, not for making real-world decisions.
 
+## Screenshots
+
+![image](https://github.com/user-attachments/assets/b8f7755a-336a-4f5f-81e5-aac0b15c2af7)
+
+![image](https://github.com/user-attachments/assets/fd892fe1-a646-4535-aaae-4b2f02207a13)
+
+![image](https://github.com/user-attachments/assets/a6859113-d344-4a29-82d4-e690663fd869)
+
 ## Contributing
 
 We welcome contributions to Neo Quick Poll. If you have ideas for improvements or find any issues, please open an issue or submit a pull request on GitHub.
