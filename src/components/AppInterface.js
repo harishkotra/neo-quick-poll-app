@@ -497,7 +497,15 @@ const AppInterface = () => {
     </div>
   );
 };
-
+const Feature = ({ title, description }) => (
+  <div className="flex items-center p-4 bg-white rounded-lg shadow-md">
+    {/* <i className={`${icon} text-3xl text-blue-500 mr-4`}></i> */}
+    <div>
+      <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+      <p className="text-sm text-gray-600">{description}</p>
+    </div>
+  </div>
+);
 const AppInfo = ({ connectWallet }) => (
   <div className="bg-gray-100 min-h-screen">
     <div className="w-full max-w-6xl mx-auto p-6">
@@ -514,7 +522,56 @@ const AppInfo = ({ connectWallet }) => (
             Neo Quick Poll brings the power of blockchain-based voting to the NeoX ecosystem, 
             enabling transparent and secure community-driven decisions.
           </p>
-          
+          <div className="grid md:grid-cols-2 gap-6">
+              <Feature 
+                icon="fa-solid fa-chart-line"
+                title="Real-time Results"
+                description="Instantly view poll outcomes as votes are cast on the blockchain."
+              />
+              <Feature 
+                icon="fa-solid fa-lock"
+                title="Secure Voting"
+                description="Leverage NeoX's robust security for tamper-proof polling."
+              />
+              <Feature 
+                icon="fa-solid fa-users"
+                title="Community Engagement"
+                description="Foster active participation in the NeoX ecosystem's governance."
+              />
+              <Feature 
+                icon="fa-solid fa-bolt"
+                title="Efficient Decision-Making"
+                description="Streamline consensus-building for faster project evolution."
+              />
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold mb-2">Why NeoX T4 Polling Matters:</h3>
+              <ul className="space-y-2">
+                <li>
+                  <FontAwesomeIcon icon="fa-solid fa-check-circle" className="text-green-500 mr-2" />
+                  Enhances transparency in the NeoX ecosystem
+                </li>
+                <li>
+                  <FontAwesomeIcon icon="fa-solid fa-check-circle" className="text-green-500 mr-2" />
+                  Provides a testbed for decentralized governance models
+                </li>
+                <li>
+                  <FontAwesomeIcon icon="fa-solid fa-check-circle" className="text-green-500 mr-2" />
+                  Encourages community-driven development and decision-making
+                </li>
+              </ul>
+            </div>
+    
+            <div className="bg-blue-50 p-6 rounded-lg shadow-inner">
+              <h3 className="text-xl font-semibold mb-4 text-blue-600">NeoX T4 Testnet Details:</h3>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li className="flex items-center"><i className="fas fa-network-wired text-blue-500 mr-2"></i> TestNet: NeoX T4</li>
+                <li className="flex items-center"><i className="fas fa-fingerprint text-blue-500 mr-2"></i> Chain ID: 12227332</li>
+                <li className="flex items-center"><i className="fas fa-link text-blue-500 mr-2"></i> RPC Endpoint: https://neoxt4seed1.ngd.network</li>
+                <li className="flex items-center"><i className="fas fa-coins text-blue-500 mr-2"></i> Currency Symbol: GAS</li>
+              </ul>
+            </div>
           <div className="text-center">
             <button 
               onClick={connectWallet} 
