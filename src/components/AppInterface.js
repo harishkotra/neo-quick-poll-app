@@ -50,18 +50,18 @@ query GetPolls {
   }
 `;
 
-const VOTE_MUTATION = gql`
-  mutation Vote($pollId: String!, $option: String!) {
-    vote(pollId: $pollId, option: $option) {
-      id
-      poll {
-        id
-      }
-      voter
-      option
-    }
-  }
-`;
+// const VOTE_MUTATION = gql`
+//   mutation Vote($pollId: String!, $option: String!) {
+//     vote(pollId: $pollId, option: $option) {
+//       id
+//       poll {
+//         id
+//       }
+//       voter
+//       option
+//     }
+//   }
+// `;
 
 
 const DebouncedInput = ({ value: initialValue, onChange, debounceTimeout = 300, ...props }) => {
@@ -136,7 +136,7 @@ const AppInterface = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [existingPolls, setExistingPolls] = useState([]);
 
-  const NEOX_T4_CHAIN_ID = '0xba9304'; // Hexadecimal representation of 12227332
+  const NEOX_T4_CHAIN_ID = '0xba9304'; //current deployed smart contract for neo quick poll
 
   const fetchWalletInfo = useCallback(async (address) => {
     try {
@@ -581,6 +581,7 @@ const Feature = ({ title, description }) => (
     </div>
   </div>
 );
+
 const AppInfo = ({ connectWallet }) => (
   <div className="bg-gray-100 min-h-screen">
     <div className="w-full max-w-6xl mx-auto p-6">
