@@ -6,6 +6,8 @@ Smart Contract Repo: [https://github.com/harishkotra/neo-quick-poll-smart-contra
 
 Infura Sub Graph Repo: [https://github.com/harishkotra/neo-quick-poll-subgraph](https://github.com/harishkotra/neo-quick-poll-subgraph)
 
+Deployed Smart Contract: [https://neoxt4scan.ngd.network/address/0xa3a586e410164140d9e71c8b0ed460a95a239513#tab=activity](https://neoxt4scan.ngd.network/address/0xa3a586e410164140d9e71c8b0ed460a95a239513#tab=activity)
+
 ## About the Project
 
 This application demonstrates how blockchain can be used for community voting and decision-making. It's designed for testing decentralized governance models without using real assets. 
@@ -66,11 +68,20 @@ Remember, this is a testnet application. It's meant for experimentation and lear
 
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/b8f7755a-336a-4f5f-81e5-aac0b15c2af7)
+![image](https://github.com/user-attachments/assets/ace65001-1627-4698-98c0-bf62b8050927)
+
+![image](https://github.com/user-attachments/assets/f6d4e033-6221-4b8f-bbd3-d331c53bc2e1)
 
 ![image](https://github.com/user-attachments/assets/fd892fe1-a646-4535-aaae-4b2f02207a13)
 
+![image](https://github.com/user-attachments/assets/6818584a-4da2-4aec-a5f6-6a61369f08f1)
+
+![image](https://github.com/user-attachments/assets/1fabf325-a142-47b9-b13c-d7d0819f7e7f)
+
 ![image](https://github.com/user-attachments/assets/a6859113-d344-4a29-82d4-e690663fd869)
+
+![image](https://github.com/user-attachments/assets/a50d94db-1900-49df-87b1-03ec96e46d43)
+
 
 ## Contributing
 
