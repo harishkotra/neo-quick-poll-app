@@ -5,7 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { Tab } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useQuery, gql } from '@apollo/client';
-import { faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
+import VoteButton from './VoteButton';
 
 const Button = ({ children, onClick, className }) => (
   <button onClick={onClick} className={`px-4 py-2 bg-blue-500 text-white rounded ${className}`}>{children}</button>
@@ -30,23 +31,38 @@ const Label = ({ htmlFor, children }) => (
 );
 
 const GET_POLLS = gql`
-  query GetPolls {
+query GetPolls {
     polls(first: 5) {
-        id
-        question
-        options
-        votes
+      id
+      question
+      options
+      votes
+      createdAt
     }
-    votes(first: 5) {
+    votes(first: 100) {
+      id
+      poll {
         id
-        poll {
-        id
-        }
-        voter
-        option
+      }
+      voter
+      option
     }
   }
 `;
+
+const VOTE_MUTATION = gql`
+  mutation Vote($pollId: String!, $option: String!) {
+    vote(pollId: $pollId, option: $option) {
+      id
+      poll {
+        id
+      }
+      voter
+      option
+    }
+  }
+`;
+
 
 const DebouncedInput = ({ value: initialValue, onChange, debounceTimeout = 300, ...props }) => {
   const [value, setValue] = useState(initialValue);
@@ -84,6 +100,28 @@ const CustomAlert = ({ message, type = 'error' }) => (
     <span className="font-medium">{type === 'error' ? 'Error! ' : 'Success! '}</span>{message}
   </div>
 );
+
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className={`fixed bottom-4 right-4 p-4 rounded-md shadow-md ${
+      type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } text-white flex items-center`}>
+      <FontAwesomeIcon 
+        icon={type === 'success' ? faCheckCircle : faExclamationCircle} 
+        className="mr-2"
+      />
+      {message}
+    </div>
+  );
+};
 
 const AppInterface = () => {
   const [account, setAccount] = useState('');
@@ -336,13 +374,13 @@ const AppInterface = () => {
     </Card>
   );
 
-  const ExistingPolls = () => {
+  const ExistingPolls = ({ isLoggedIn, account }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [votingPollId, setVotingPollId] = useState(null);
+    const [localPolls, setLocalPolls] = useState([]);
     const { loading, error, data, refetch } = useQuery(GET_POLLS, {
-      onCompleted: () => {
-        if (error) {
-          console.log('Data loaded successfully, clearing previous error');
-        }
+      onCompleted: (fetchedData) => {
+        setLocalPolls(fetchedData.polls);
         setIsRefreshing(false);
       },
       onError: (error) => {
@@ -359,6 +397,32 @@ const AppInterface = () => {
     const handleRefresh = () => {
       setIsRefreshing(true);
       refetch();
+    };
+  
+    const handleVoteSuccess = ({ pollId, option }) => {
+      setLocalPolls(prevPolls => 
+        prevPolls.map(poll => {
+          if (poll.id === pollId) {
+            const updatedVotes = [...poll.votes];
+            const optionIndex = poll.options.indexOf(option);
+            if (optionIndex !== -1) {
+              updatedVotes[optionIndex] += 1;
+            }
+            return { ...poll, votes: updatedVotes };
+          }
+          return poll;
+        })
+      );
+      setVotingPollId(null);
+    };
+  
+    const handleVoteStart = (pollId) => {
+      setVotingPollId(pollId);
+    };
+  
+    const hasVotedOnPoll = (pollId) => {
+      if (!data || !data.votes || !account) return false;
+      return data.votes.some(vote => vote.poll.id === pollId && vote.voter.toLowerCase() === account.toLowerCase());
     };
   
     if (loading && !isRefreshing) return <Card><p className="text-center">Loading polls...</p></Card>;
@@ -382,7 +446,7 @@ const AppInterface = () => {
       );
     }
   
-    if (!data || !data.polls || data.polls.length === 0) {
+    if (!localPolls || localPolls.length === 0) {
       return (
         <Card>
           <p className="text-center">No polls found. Create a new poll to get started!</p>
@@ -394,24 +458,35 @@ const AppInterface = () => {
       <Card>
         <h2 className="text-2xl font-bold mb-4">Existing Polls</h2>
         <div className="space-y-4">
-          {data.polls.map((poll) => (
-            <div key={poll.id} className="border p-4 rounded">
-              <h3 className="text-xl font-semibold mb-2">{poll.question}</h3>
-              <ul>
-                {poll.options.map((option, index) => (
-                  <li key={index} className="flex justify-between">
-                    <span>{option}</span>
-                    <span>{poll.votes[index]} votes</span>
-                  </li>
-                ))}
-              </ul>
-              {poll.createdAt && (
-                <p className="text-sm text-gray-500 mt-2">
-                  Created at: {new Date(parseInt(poll.createdAt) * 1000).toLocaleString()}
-                </p>
-              )}
-            </div>
-          ))}
+          {localPolls.map((poll) => {
+            const userHasVoted = hasVotedOnPoll(poll.id);
+            return (
+              <div key={poll.id} className="border p-4 rounded">
+                <h3 className="text-xl font-semibold mb-2">{poll.question}</h3>
+                <ul>
+                  {poll.options.map((option, index) => (
+                    <li key={index} className="flex justify-between items-center mb-2">
+                      <span>{option}: {poll.votes[index]} votes</span>
+                      <VoteButton
+                        pollId={poll.id}
+                        option={option}
+                        isConnected={isLoggedIn}
+                        onVoteSuccess={handleVoteSuccess}
+                        hasVoted={userHasVoted}
+                        isVoting={votingPollId === poll.id}
+                        onVoteStart={handleVoteStart}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                {poll.createdAt && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Created at: {new Date(parseInt(poll.createdAt) * 1000).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
         <Button 
           onClick={handleRefresh} 
@@ -429,7 +504,7 @@ const AppInterface = () => {
         </Button>
       </Card>
     );
-  };
+  };  
 
   const ConfirmationModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
@@ -483,7 +558,7 @@ const AppInterface = () => {
                 <CreatePoll />
               </Tab.Panel>
               <Tab.Panel>
-                <ExistingPolls />
+                <ExistingPolls isLoggedIn={isLoggedIn} account={account} />
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>
