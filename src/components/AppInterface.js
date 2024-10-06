@@ -7,6 +7,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useQuery, gql } from '@apollo/client';
 import { faSpinner, faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import VoteButton from './VoteButton';
+import { getAISuggestions } from '../utils/aiUtils';
+import CreatePoll from './CreatePoll';
 
 const Button = ({ children, onClick, className }) => (
   <button onClick={onClick} className={`px-4 py-2 bg-blue-500 text-white rounded ${className}`}>{children}</button>
@@ -63,38 +65,6 @@ query GetPolls {
 //   }
 // `;
 
-
-const DebouncedInput = ({ value: initialValue, onChange, debounceTimeout = 300, ...props }) => {
-  const [value, setValue] = useState(initialValue);
-  const timeoutRef = React.useRef(null);
-
-  useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
-
-  const handleChange = (event) => {
-    const newValue = event.target.value;
-    setValue(newValue);
-    
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      onChange(newValue);
-    }, debounceTimeout);
-  };
-
-  return (
-    <input
-      {...props}
-      value={value}
-      onChange={handleChange}
-      className="w-full px-3 py-2 border rounded"
-    />
-  );
-};
-
 const CustomAlert = ({ message, type = 'error' }) => (
   <div className={`p-4 mb-4 text-sm rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`} role="alert">
     <span className="font-medium">{type === 'error' ? 'Error! ' : 'Success! '}</span>{message}
@@ -135,9 +105,10 @@ const AppInterface = () => {
   const [transactionHash, setTransactionHash] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [existingPolls, setExistingPolls] = useState([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
   const NEOX_T4_CHAIN_ID = '0xba9304'; //current deployed smart contract for neo quick poll
-
+  
   const fetchWalletInfo = useCallback(async (address) => {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -246,15 +217,23 @@ const AppInterface = () => {
   };
 
   const handleCreatePoll = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+  
     setIsLoading(true);
     setError('');
     setSuccess('');
     try {
       const contract = await getContract();
-  
-      // Remove any empty options
+      
+      if (!pollQuestion.trim()) {
+        throw new Error('Please enter a poll question.');
+      }
       const validOptions = pollOptions.filter(option => option.trim() !== '');
+      if (validOptions.length < 2) {
+        throw new Error('Please provide at least two non-empty options');
+      }
   
       if (validOptions.length < 2) {
         setError('Please provide at least two non-empty options');
@@ -289,6 +268,24 @@ const AppInterface = () => {
       setError('Failed to create poll: ' + (err.reason || err.message));
     } finally {
       setIsLoading(false);
+    }
+  };
+  const handleGetSuggestions = async () => {
+    if (!pollQuestion) {
+      alert('Please enter a poll question first.');
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    try {
+      const suggestions = await getAISuggestions(pollQuestion);
+      setIsLoadingSuggestions(false);
+      return suggestions;
+    } catch (error) {
+      console.error('Error getting AI suggestions:', error);
+      alert('Failed to get AI suggestions. Please try again.');
+    } finally {
+      setIsLoadingSuggestions(false);
     }
   };
 
@@ -329,50 +326,6 @@ const AppInterface = () => {
   //     setError('Failed to fetch existing polls');
   //   }
   // };
-
-  const CreatePoll = () => (
-    <Card>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Create a New Poll on NeoX</h2>
-      </div>
-      {walletInfo && (
-        <div className="mb-4">
-          <p>Connected: {walletInfo.address}</p>
-          <p>Balance: {walletInfo.gasBalance} GAS</p>
-        </div>
-      )}
-      <form onSubmit={handleCreatePoll}>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="question">Poll Question</Label>
-            <DebouncedInput
-              id="question"
-              value={pollQuestion}
-              onChange={handleQuestionChange}
-              placeholder="Enter your poll question"
-            />
-          </div>
-          {pollOptions.map((option, index) => (
-            <div key={index}>
-              <Label htmlFor={`option-${index}`}>Option {index + 1}</Label>
-              <DebouncedInput
-                id={`option-${index}`}
-                value={option}
-                onChange={(newValue) => handleOptionChange(index, newValue)}
-                placeholder={`Enter option ${index + 1}`}
-              />
-            </div>
-          ))}
-          <Button type="button" onClick={addOption} className="mr-2">
-            Add Option
-          </Button>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Creating Poll...' : 'Create Poll on NeoX T4'}
-          </Button>
-        </div>
-      </form>
-    </Card>
-  );
 
   const ExistingPolls = ({ isLoggedIn, account }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -555,7 +508,20 @@ const AppInterface = () => {
             </Tab.List>
             <Tab.Panels>
               <Tab.Panel>
-                <CreatePoll />
+                <CreatePoll
+                  account={account}
+                  pollQuestion={pollQuestion}
+                  setPollQuestion={setPollQuestion}
+                  pollOptions={pollOptions}
+                  setPollOptions={setPollOptions}
+                  walletInfo={walletInfo}
+                  isLoading={isLoading}
+                  handleCreatePoll={handleCreatePoll}
+                  handleGetSuggestions={handleGetSuggestions}
+                  isLoadingSuggestions={isLoadingSuggestions}
+                  error={error}
+                  setError={setError}
+                />
               </Tab.Panel>
               <Tab.Panel>
                 <ExistingPolls isLoggedIn={isLoggedIn} account={account} />
@@ -566,8 +532,6 @@ const AppInterface = () => {
       ) : (
         <AppInfo connectWallet={connectWallet} />
       )}
-      {error && <CustomAlert message={error} type="error" />}
-      {success && <CustomAlert message={success} type="success" />}
       {showConfirmation && <ConfirmationModal />}
     </div>
   );
