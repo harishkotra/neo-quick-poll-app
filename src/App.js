@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import { Menu, Transition, Dialog } from '@headlessui/react';
 import { ChevronDownIcon, ExclamationTriangleIcon } from '@heroicons/react/20/solid';
 import AppInterface from './components/AppInterface';
 import HowItWorks from './components/HowItWorks';
+import CreatePoll from './components/CreatePoll';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import './fontawesome';
 import { ethers } from 'ethers';
@@ -33,13 +34,12 @@ const Header = ({ isConnected, account, onConnectWallet, onDisconnectWallet, onU
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <FontAwesomeIcon icon="fa-solid fa-poll" className="text-2xl mr-2" />
-            <h1 className="text-xl font-bold">Neo Quick Poll</h1>
+            <Link to="/" className="text-xl font-bold">Neo Quick Poll</Link>
           </div>
           <nav className="flex items-center">
             <ul className="flex space-x-4 mr-4">
               <li><Link to="/" className="hover:text-blue-200 transition duration-150 ease-in-out">Home</Link></li>
               <li><Link to="/how-it-works" className="hover:text-blue-200 transition duration-150 ease-in-out">How It Works</Link></li>
-              
             </ul>
             {isConnected ? (
               <Menu as="div" className="relative inline-block text-left">
@@ -87,9 +87,14 @@ const Header = ({ isConnected, account, onConnectWallet, onDisconnectWallet, onU
             ) : (
               <button
                 onClick={onConnectWallet}
-                className="bg-white text-blue-600 px-4 py-2 rounded-md hover:bg-blue-100 transition duration-300"
+                className="flex items-center justify-center px-4 py-2 bg-[#efefef] text-[#F6851B] font-bold rounded-full transition duration-300 transform hover:scale-105 shadow-lg"
               >
-                Connect Wallet
+                <img 
+                  src="https://github.com/MetaMask/brand-resources/raw/master/SVG/SVG_MetaMask_Icon_Color.svg" 
+                  alt="MetaMask Logo" 
+                  className="w-5 h-5 mr-2"
+                />
+                Connect MetaMask
               </button>
             )}
           </nav>
@@ -141,7 +146,7 @@ const Footer = () => (
   <footer className="bg-gray-800 text-white py-8">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
       <p className="text-lg">&copy; 2024 Neo Quick Poll. It's all on-chain!</p>
-      <div className="mt-4 flex justify-center space-x-6">
+      {/* <div className="mt-4 flex justify-center space-x-6">
         <a href="#" className="text-gray-400 hover:text-white transition duration-150 ease-in-out">
           <FontAwesomeIcon icon="fa-brands fa-twitter" size="lg" />
         </a>
@@ -151,7 +156,7 @@ const Footer = () => (
         <a href="#" className="text-gray-400 hover:text-white transition duration-150 ease-in-out">
           <FontAwesomeIcon icon="fa-brands fa-discord" size="lg" />
         </a>
-      </div>
+      </div> */}
     </div>
   </footer>
 );
@@ -159,10 +164,27 @@ const Footer = () => (
 function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [account, setAccount] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [walletInfo, setWalletInfo] = useState(null);
 
   useEffect(() => {
     checkWalletConnection();
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    return () => {
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+    };
   }, []);
+
+  const handleAccountsChanged = (accounts) => {
+    if (accounts.length === 0) {
+      // User disconnected their wallet
+      disconnectWallet();
+    } else {
+      // User switched to a different account
+      setAccount(accounts[0]);
+      setIsConnected(true);
+    }
+  };
 
   const checkWalletConnection = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -177,6 +199,11 @@ function App() {
         console.error('Failed to check wallet connection:', err);
       }
     }
+  };
+
+  const onConnectWallet = (address) => {
+    setAccount(address);
+    setIsConnected(true);
   };
 
   const connectWallet = async () => {
@@ -199,16 +226,23 @@ function App() {
   const disconnectWallet = () => {
     setIsConnected(false);
     setAccount('');
+    setIsLoggedIn(false);
+    setWalletInfo(null);
   };
 
   const unlinkWallet = () => {
     setIsConnected(false);
     setAccount('');
     localStorage.removeItem('walletConnected');
-    // Add any other cleanup logic here
-    // For example, you might want to clear any stored poll data associated with this account
-    // localStorage.removeItem('userPolls');
-    console.log('Wallet unlinked and all associated data removed');
+    //console.log('Wallet unlinked and all associated data removed');
+  };
+
+  // Wrapper component to check for wallet connection
+  const ProtectedRoute = ({ children }) => {
+    if (!isConnected) {
+      return <Navigate to="/" replace />;
+    }
+    return children;
   };
 
   return (
@@ -229,9 +263,18 @@ function App() {
                   isConnected={isConnected} 
                   account={account} 
                   onConnectWallet={connectWallet}
+                  onDisconnectWallet={disconnectWallet}
                 />
               } />
               <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/create-poll" element={
+                <ProtectedRoute>
+                  <CreatePoll 
+                    account={account}
+                    // Pass other necessary props here
+                  />
+                </ProtectedRoute>
+              } />
             </Routes>
           </main>
           <Footer />

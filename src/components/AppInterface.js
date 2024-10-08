@@ -93,8 +93,8 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-const AppInterface = () => {
-  const [account, setAccount] = useState('');
+const AppInterface = ({ isConnected, account, onConnectWallet, onDisconnectWallet }) => {
+  //const [account, setAccount] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [pollQuestion, setPollQuestion] = useState('');
@@ -116,12 +116,18 @@ const AppInterface = () => {
       const gasBalance = ethers.formatEther(balance);
       
       setWalletInfo({ address, gasBalance });
-      console.log('Wallet Info:', { address, gasBalance: gasBalance + ' GAS' });
+      //console.log('Wallet Info:', { address, gasBalance: gasBalance + ' GAS' });
     } catch (err) {
       console.error('Error fetching wallet info:', err);
       setError('Failed to fetch wallet info');
     }
   }, []);
+
+  useEffect(() => {
+    if (isConnected && account) {
+      fetchWalletInfo(account);
+    }
+  }, [isConnected, account, fetchWalletInfo]);
 
   const checkWalletConnection = useCallback(async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -131,27 +137,20 @@ const AppInterface = () => {
         if (network.chainId.toString(16) === NEOX_T4_CHAIN_ID.slice(2)) {
           const accounts = await provider.listAccounts();
           if (accounts.length > 0) {
-            setAccount(accounts[0].address);
-            setIsLoggedIn(true);
             await fetchWalletInfo(accounts[0].address);
-            //await fetchExistingPolls();
           } else {
-            setIsLoggedIn(false);
-            setAccount('');
-            setWalletInfo(null);
+            onDisconnectWallet();
           }
         } else {
           setError('Please switch to the NeoX T4 Testnet in MetaMask');
-          setIsLoggedIn(false);
+          onDisconnectWallet();
         }
       } catch (err) {
         console.error('Failed to check wallet connection:', err);
-        setIsLoggedIn(false);
-        setAccount('');
-        setWalletInfo(null);
+        onDisconnectWallet();
       }
     }
-  }, [NEOX_T4_CHAIN_ID, fetchWalletInfo]);
+  }, [NEOX_T4_CHAIN_ID, fetchWalletInfo, onDisconnectWallet]);
 
   useEffect(() => {
     checkWalletConnection();
@@ -163,7 +162,7 @@ const AppInterface = () => {
         await window.ethereum.request({ method: 'eth_requestAccounts' });
         const provider = new ethers.BrowserProvider(window.ethereum);
         const network = await provider.getNetwork();
-
+  
         if (network.chainId.toString(16) !== NEOX_T4_CHAIN_ID.slice(2)) {
           try {
             await window.ethereum.request({
@@ -187,15 +186,16 @@ const AppInterface = () => {
             }
           }
         }
-
+  
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
-        setAccount(address);
-        setIsLoggedIn(true);
+        
+        // Instead of setting the account directly, we'll call the onConnectWallet prop
+        onConnectWallet(address);
+        
         setError('');
         setSuccess('Wallet connected successfully');
         await fetchWalletInfo(address);
-        //await fetchExistingPolls();
       } catch (err) {
         setError('Failed to connect wallet to NeoX T4 Testnet');
         console.error(err);
@@ -205,15 +205,18 @@ const AppInterface = () => {
     }
   };
 
-  const logout = () => {
-    setAccount('');
-    setIsLoggedIn(false);
+  const handleLogout = () => {
+    // Call the onDisconnectWallet prop to handle account and connection state in the parent
+    onDisconnectWallet();
+  
+    // Reset local component state
     setPollQuestion('');
     setPollOptions(['', '']);
     setError('');
     setSuccess('');
     setWalletInfo(null);
-    //setExistingPolls([]);
+    // If you're managing existingPolls in this component, uncomment the next line
+    // setExistingPolls([]);
   };
 
   const handleCreatePoll = async (e) => {
@@ -235,18 +238,12 @@ const AppInterface = () => {
         throw new Error('Please provide at least two non-empty options');
       }
   
-      if (validOptions.length < 2) {
-        setError('Please provide at least two non-empty options');
-        setIsLoading(false);
-        return;
-      }
-  
       // Generate a unique pollId
       const pollId = uuidv4();
   
       // Call the createPoll function on the smart contract
       const tx = await contract.createPoll(pollId, pollQuestion, validOptions);
-      console.log('Transaction sent:', tx.hash);
+      //console.log('Transaction sent:', tx.hash);
       setTransactionHash(tx.hash);
       
       // Wait for the transaction to be mined
@@ -261,8 +258,6 @@ const AppInterface = () => {
       setPollQuestion('');
       setPollOptions(['', '']);
 
-      // Fetch updated polls
-      //await fetchExistingPolls();
     } catch (err) {
       console.error('Error creating poll:', err);
       setError('Failed to create poll: ' + (err.reason || err.message));
@@ -270,6 +265,7 @@ const AppInterface = () => {
       setIsLoading(false);
     }
   };
+
   const handleGetSuggestions = async () => {
     if (!pollQuestion) {
       alert('Please enter a poll question first.');
@@ -485,7 +481,7 @@ const AppInterface = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      {isLoggedIn ? (
+      {isConnected ? (
         <div className="w-full max-w-4xl">
           <Tab.Group>
             <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1 mb-4">
@@ -524,13 +520,13 @@ const AppInterface = () => {
                 />
               </Tab.Panel>
               <Tab.Panel>
-                <ExistingPolls isLoggedIn={isLoggedIn} account={account} />
+                <ExistingPolls isLoggedIn={isConnected} account={account} />
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>
         </div>
       ) : (
-        <AppInfo connectWallet={connectWallet} />
+        <AppInfo connectWallet={onConnectWallet} />
       )}
       {showConfirmation && <ConfirmationModal />}
     </div>
@@ -563,30 +559,26 @@ const AppInfo = ({ connectWallet }) => (
             enabling transparent and secure community-driven decisions.
           </p>
           <div className="grid md:grid-cols-2 gap-6">
-              <Feature 
-                icon="fa-solid fa-chart-line"
-                title="Real-time Results"
+              <Feature
+                title="📊 Real-time Results"
                 description="Instantly view poll outcomes as votes are cast on the blockchain."
               />
-              <Feature 
-                icon="fa-solid fa-lock"
-                title="Secure Voting"
+              <Feature
+                title="🔒 Secure Voting"
                 description="Leverage NeoX's robust security for tamper-proof polling."
               />
-              <Feature 
-                icon="fa-solid fa-users"
-                title="Community Engagement"
+              <Feature
+                title="👥 Community Engagement"
                 description="Foster active participation in the NeoX ecosystem's governance."
               />
-              <Feature 
-                icon="fa-solid fa-bolt"
-                title="Efficient Decision-Making"
+              <Feature
+                title="⚡ Efficient Decision-Making"
                 description="Streamline consensus-building for faster project evolution."
               />
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Why NeoX T4 Polling Matters:</h3>
+              <h3 className="text-lg font-semibold mb-2">Why Neo Quick Poll Matters:</h3>
               <ul className="space-y-2">
                 <li>
                   <FontAwesomeIcon icon="fa-solid fa-check-circle" className="text-green-500 mr-2" />
@@ -602,8 +594,40 @@ const AppInfo = ({ connectWallet }) => (
                 </li>
               </ul>
             </div>
-    
-            <div className="bg-blue-50 p-6 rounded-lg shadow-inner">
+
+            <div className="text-center mt-8">
+              <button 
+                onClick={() => {/* Add navigation logic here */}}
+                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105 shadow-md"
+              >
+                Learn How It Works
+              </button>
+              <p className="mt-2 text-sm text-gray-600">
+                Discover how to use Neo Quick Poll on the NeoX T4 (Testnet)
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-12 bg-gradient-to-r from-[#F6851B] to-[#E2761B] rounded-lg shadow-xl overflow-hidden">
+          <div className="p-8 flex flex-col items-center justify-center">
+            <h3 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h3>
+            <button 
+              onClick={connectWallet} 
+              className="flex items-center justify-center px-8 py-4 bg-white text-[#F6851B] font-bold rounded-full hover:bg-gray-100 transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+            >
+              <img 
+                src="https://github.com/MetaMask/brand-resources/raw/master/SVG/SVG_MetaMask_Icon_Color.svg" 
+                alt="MetaMask Logo" 
+                className="w-6 h-6 mr-2"
+              />
+              Connect MetaMask
+            </button>
+            <p className="mt-4 text-sm text-white">
+              Connect your MetaMask wallet to start creating and participating in decentralized polls on the NeoX T4 Testnet!
+            </p>
+          </div>
+        </div>
+            {/* <div className="bg-blue-50 p-6 rounded-lg shadow-inner">
               <h3 className="text-xl font-semibold mb-4 text-blue-600">NeoX T4 Testnet Details:</h3>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-center"><i className="fas fa-network-wired text-blue-500 mr-2"></i> TestNet: NeoX T4</li>
@@ -611,20 +635,7 @@ const AppInfo = ({ connectWallet }) => (
                 <li className="flex items-center"><i className="fas fa-link text-blue-500 mr-2"></i> RPC Endpoint: https://neoxt4seed1.ngd.network</li>
                 <li className="flex items-center"><i className="fas fa-coins text-blue-500 mr-2"></i> Currency Symbol: GAS</li>
               </ul>
-            </div>
-          <div className="text-center">
-            <button 
-              onClick={connectWallet} 
-              className="px-8 py-4 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
-            >
-              <FontAwesomeIcon icon="fa-ethereum" className="mr-2" /> Connect MetaMask to NeoX T4
-            </button>
-            <p className="mt-4 text-sm text-gray-600">
-              Connect your MetaMask wallet to start creating and participating in decentralized polls on the NeoX T4 Testnet!
-            </p>
-          </div>
-        </div>
-      </div>
+            </div> */}
     </div>
   </div>
 );
