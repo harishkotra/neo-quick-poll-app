@@ -1,3 +1,4 @@
+![favicon](https://github.com/user-attachments/assets/8aa2827c-62d0-4419-8167-e2fab7ad3e4b)
 # Neo Quick Poll
 
 Neo Quick Poll is a decentralized polling application built on the NeoX T4 Testnet. It allows communities to make decisions transparently and securely using blockchain technology.
@@ -66,7 +67,17 @@ Note: You'll need MetaMask installed and connected to the NeoX T4 Testnet to use
 
 Remember, this is a testnet application. It's meant for experimentation and learning, not for making real-world decisions.
 
-## Screenshots
+## Screenshots (for second deadline on October 8, 2024)
+
+![homepage](https://github.com/user-attachments/assets/244daa37-74d6-40ad-b441-5a41bf4c27dd)
+![how-it-works-1](https://github.com/user-attachments/assets/119c54c0-aff7-4bc6-8d53-e35c92beea41)
+![ai-suggestions-for-use-cases](https://github.com/user-attachments/assets/1b06c7da-ded0-4eca-a6d6-b59bbdd94e5f)
+![connect-wallet](https://github.com/user-attachments/assets/fd299315-243b-440b-bef6-d6a905fc53f6)
+![create-poll](https://github.com/user-attachments/assets/f68e06c4-8de5-4c25-938d-8fddc17178f4)
+![ai-suggestions](https://github.com/user-attachments/assets/e1def740-105d-452a-880b-70155d20dc8e)
+![existing-polls](https://github.com/user-attachments/assets/d9b6ffe0-c4ce-4370-b95c-b89e89fedc02)
+
+## Screenshots (for first deadline on October 6, 2024)
 
 ![image](https://github.com/user-attachments/assets/ace65001-1627-4698-98c0-bf62b8050927)
 
