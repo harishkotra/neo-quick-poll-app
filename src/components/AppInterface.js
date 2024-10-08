@@ -532,6 +532,7 @@ const AppInterface = ({ isConnected, account, onConnectWallet, onDisconnectWalle
     </div>
   );
 };
+
 const Feature = ({ title, description }) => (
   <div className="flex items-center p-4 bg-white rounded-lg shadow-md">
     {/* <i className={`${icon} text-3xl text-blue-500 mr-4`}></i> */}
@@ -595,9 +596,9 @@ const AppInfo = ({ connectWallet }) => (
               </ul>
             </div>
 
-            <div className="text-center mt-8">
+            {/* <div className="text-center mt-8">
               <button 
-                onClick={() => {/* Add navigation logic here */}}
+                onClick={() => {goToHowItWorks}}
                 className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105 shadow-md"
               >
                 Learn How It Works
@@ -605,7 +606,7 @@ const AppInfo = ({ connectWallet }) => (
               <p className="mt-2 text-sm text-gray-600">
                 Discover how to use Neo Quick Poll on the NeoX T4 (Testnet)
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
         <div className="mt-12 bg-gradient-to-r from-[#F6851B] to-[#E2761B] rounded-lg shadow-xl overflow-hidden">
