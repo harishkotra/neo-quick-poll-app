@@ -7,7 +7,7 @@ export const getAISuggestions = async (question) => {
   try {
     console.log(question);
     const response = await axios.post(
-      '/v1/chat/completions',
+      'https://llama.us.gaianet.network/v1/chat/completions',
       {
         model: 'llama',
         messages: [
@@ -42,7 +42,7 @@ export const getAISuggestions = async (question) => {
 export const getUseCaseExample = async (useCase) => {
   try {
     const response = await axios.post(
-      '/v1/chat/completions',
+      'https://llama.us.gaianet.network/v1/chat/completions',
       {
         model: 'llama',
         messages: [
